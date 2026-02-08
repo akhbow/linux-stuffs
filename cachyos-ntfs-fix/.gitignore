@@ -1,0 +1,12 @@
+# Mengabaikan file log atau history terminal
+*.log
+.bash_history
+
+# Mengabaikan file backup editor
+*~
+*.swp
+*.save
+
+# Mengabaikan file sistem OS
+.DS_Store
+Thumbs.db
