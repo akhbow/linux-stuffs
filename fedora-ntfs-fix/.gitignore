@@ -1,0 +1,4 @@
+# Local overrides / backups — keep real UUIDs and machine state out of the repo
+*.local
+*.bak
+fstab.local

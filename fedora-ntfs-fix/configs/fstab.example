@@ -1,0 +1,12 @@
+# Fedora NTFS fstab — templated. Replace <UUID> with values from `lsblk -f` / `blkid -U`.
+# Internal HDD A (ntfs-3g, userspace/FUSE)
+UUID=<WIN_3_6T_UUID>  /mnt/win-3.6t   ntfs-3g  uid=1000,gid=1000,windows_names,noatime,nofail  0  0
+
+# Internal HDD B (ntfs-3g, userspace/FUSE)
+UUID=<WIN_1_8T_UUID>  /mnt/win-1.8t   ntfs-3g  uid=1000,gid=1000,windows_names,noatime,nofail  0  0
+
+# External HDD (ntfs3 kernel driver, 'force' so a dirty external disk still mounts)
+UUID=<WIN_931G_UUID>  /mnt/win-931g   ntfs3  uid=1000,gid=1000,windows_names,noatime,nofail,force  0  0
+
+# Windows C: (NVMe, ntfs3 kernel driver — no 'force' needed for the system partition)
+UUID=<WIN_C_UUID>     /mnt/win-c      ntfs3  uid=1000,gid=1000,windows_names,noatime,nofail  0  0
