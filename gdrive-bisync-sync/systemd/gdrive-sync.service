@@ -1,0 +1,6 @@
+[Unit]
+Description=Rclone Google Drive Bisync (Works - UNDA)
+
+[Service]
+Type=oneshot
+ExecStart=%h/gdrive-do-sync.sh

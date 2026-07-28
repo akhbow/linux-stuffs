@@ -1,0 +1,7 @@
+[Unit]
+Description=GDrive Bisync Watchdog (early detection of stuck sync)
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/gdrive-bisync-watchdog.sh

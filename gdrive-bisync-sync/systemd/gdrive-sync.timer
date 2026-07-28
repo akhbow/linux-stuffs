@@ -1,0 +1,9 @@
+[Unit]
+Description=Run Rclone Google Drive Bisync every 8 minutes
+
+[Timer]
+OnActiveSec=1min
+OnUnitActiveSec=8min
+
+[Install]
+WantedBy=timers.target
