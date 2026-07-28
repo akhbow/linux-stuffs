@@ -1,6 +1,10 @@
 # Linux Stuffs
 
-A personal collection of scripts, configurations, and fixes for Linux (specifically optimized for **CachyOS**).
+A personal collection of scripts, configurations, and fixes for Linux.
+
+Current projects:
+- **CachyOS NTFS Fix** — dual-boot NTFS mount management (optimized for CachyOS / Arch).
+- **GDrive Bisync Sync** — two-way Google Drive sync via `rclone bisync` with systemd timers + a stuck-sync watchdog.
 
 ---
 
@@ -9,6 +13,7 @@ A personal collection of scripts, configurations, and fixes for Linux (specifica
 | Project Name | Description | Link |
 | :--- | :--- | :--- |
 | **CachyOS NTFS Fix** | Scripts to handle NTFS mounting issues, lock files, and permissions in dual-boot setups. | [View Project](./cachyos-ntfs-fix) |
+| **GDrive Bisync Sync** | Two-way Google Drive sync via `rclone bisync` with systemd timers and a stuck-sync watchdog. | [View Project](./gdrive-bisync-sync) |
 
 ---
 
@@ -17,14 +22,11 @@ Each sub-folder contains its own documentation and installation scripts. Navigat
 
 ```bash
 cd linux-stuffs/cachyos-ntfs-fix
-
+# or
+cd linux-stuffs/gdrive-bisync-sync
 ```
 
 ## 🛠 Prerequisites
 
-Most scripts in this repository require the following packages on Arch-based systems:
-
-* `ntfs-3g`
-* `bash`
-
-```
+* **CachyOS / Arch-based** (NTFS fix): `ntfs-3g`, `bash`
+* **Any systemd Linux** (Drive sync): `rclone` (v1.74+), `fuse3`

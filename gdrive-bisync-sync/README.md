@@ -1,20 +1,18 @@
-# gdrive-bisync-sync
-
-Two-way (bidirectional) sync between a Google Drive folder (`Works - UNDA`) and a
-local directory, kept healthy with a self-healing systemd timer + a watchdog that
-flags a stuck sync early.
-
-Built and tested on Fedora 44 (fuse3 / `fusermount3`), rclone v1.74.x.
+# 🔄 GDrive Bisync Sync
+> Two-way Google Drive sync with self-healing systemd timers + a stuck-sync watchdog.
+> Built and tested on Fedora 44 (fuse3 / `fusermount3`), rclone v1.74.x.
 
 > **Scope note:** Google Drive credentials live in `~/.config/rclone/rclone.conf`
 > (created locally via `rclone config` / `rclone config reconnect`). **That file is
 > intentionally NOT in this repo** — you create it yourself (see Setup). Nothing in
 > this repo contains tokens, client secrets, or passwords.
 
-## What's in here
+---
+
+## 📦 What's in here
 
 | Path | What |
-|---|---|
+| :--- | :--- |
 | `gdrive-do-sync.sh` | Runs `rclone bisync` (the actual two-way sync). |
 | `gdrive-refresh.sh` | Rewrites `rclone-mount.service`, clears VFS cache, restarts the mount. |
 | `gdrive-bisync-watchdog.sh` | Early-detection watchdog — alerts if the sync fails N times in a row. Does **not** auto-fix. |
@@ -22,7 +20,9 @@ Built and tested on Fedora 44 (fuse3 / `fusermount3`), rclone v1.74.x.
 | `docs/gdrive-setup-report.md` | Full setup report + incident log (incl. the recovery runbook). |
 | `docs/gdrive-works-unda-migration.md` | Runbook for migrating the synced folder off the FUSE mount to a real local dir. |
 
-## Architecture in one paragraph
+---
+
+## 🏗️ Architecture
 
 `rclone-mount.service` FUSE-mounts the whole `gdrive:` remote at `~/GoogleDrive`
 (optional — handy for browsing the rest of Drive). `gdrive-sync.timer` fires
@@ -33,7 +33,9 @@ reads the last bisync result; after 3 consecutive failures it raises a desktop a
 so a missing-baseline situation (which needs a manual `--resync`) is caught in ~30 min
 instead of days.
 
-## Setup
+---
+
+## 🚀 Setup
 
 1. Install rclone, and confirm fuse3 tooling: `which fusermount3`.
 2. Create the `gdrive` remote (name must stay exactly `gdrive` — the scripts hardcode
@@ -71,7 +73,9 @@ instead of days.
    ```
    Confirm `Bisync successful` in `/tmp/rclone-bisync.log`.
 
-## Recovery (if the watchdog alerts "GDrive bisync STUCK")
+---
+
+## 🛠️ Recovery (if the watchdog alerts "GDrive bisync STUCK")
 
 A stuck sync is almost always a **missing bisync baseline** (rclone refuses to proceed
 without prior listings). Recovery is manual by design — an automatic resync on a missing
@@ -90,7 +94,9 @@ systemctl --user start gdrive-sync.timer
 The watchdog auto-clears its alert once a clean run lands. Full detail in
 `docs/gdrive-setup-report.md` (§7–§9).
 
-## Notes / gotchas
+---
+
+## ⚠️ Notes / gotchas
 
 - **Relative timer, not `OnCalendar`.** The sync uses `OnActiveSec` + `OnUnitActiveSec`
   (not `*:0/8`) so runs stay evenly spaced regardless of run duration — `OnCalendar`
@@ -102,3 +108,7 @@ The watchdog auto-clears its alert once a clean run lands. Full detail in
   in-flight bisync isn't killed mid-run by a desktop session end.
 - Google-native Docs/Sheets appear as "unknown size" in `rclone size` and won't have a
   real file on disk — that's expected, not missing data.
+
+---
+
+*Created by [Dwi Wahyu Prabowo](https://github.com/akhbow/)*
