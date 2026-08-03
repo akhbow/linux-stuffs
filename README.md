@@ -6,6 +6,7 @@ Current projects:
 - **CachyOS NTFS Fix** — dual-boot NTFS mount management (optimized for CachyOS / Arch).
 - **Fedora NTFS Fix** — dual-driver (ntfs-3g + ntfs3) NTFS mount setup for Fedora.
 - **GDrive Bisync Sync** — two-way Google Drive sync via `rclone bisync` with systemd timers + a stuck-sync watchdog.
+- **Fastfetch Config** — boxed hardware/software/uptime layout for `fastfetch` (Fedora).
 
 ---
 
@@ -16,6 +17,7 @@ Current projects:
 | **CachyOS NTFS Fix** | Scripts to handle NTFS mounting issues, lock files, and permissions in dual-boot setups. | [View Project](./cachyos-ntfs-fix) |
 | **Fedora NTFS Fix** | Dual-driver (`ntfs-3g` + `ntfs3`) NTFS mount setup for Fedora (internal + external disks). | [View Project](./fedora-ntfs-fix) |
 | **GDrive Bisync Sync** | Two-way Google Drive sync via `rclone bisync` with systemd timers and a stuck-sync watchdog. | [View Project](./gdrive-bisync-sync) |
+| **Fastfetch Config** | Boxed hardware/software/uptime layout for `fastfetch` (Fedora). | [View Project](./fastfetch-config) |
 
 ---
 
