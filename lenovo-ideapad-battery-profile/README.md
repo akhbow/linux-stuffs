@@ -1,22 +1,23 @@
 # Lenovo Battery Conservation (Fedora / IdeaPad)
 
-Skrip untuk membatasi charge baterai Lenovo IdeaPad di ~60% (mode awet /
-`conservation_mode`) agar baterai tahan lama saat selalu colok charger.
+Scripts to cap Lenovo IdeaPad battery charging at ~60% (battery-saver /
+`conservation_mode`) so the battery lasts longer when the laptop is always
+plugged in.
 
-## Fakta mesin
-- Laptop: Lenovo IdeaPad, Fedora 44, baterai `BAT1`.
-- Dua sysfs API: `conservation_mode` (biner 0/1) dan `charge_types`
-  (`Fast`/`Standard`/`Long_Life`).
-- **Sumber kebenaran = `conservation_mode`** (batas ~60%, paling awet).
-- `charge_types` TIDAK stabil di mesin ini (kernel fallback ke `Standard`)
-  dan menulisnya **me-reset `conservation_mode` ke 0** — jangan digunakan.
+## Machine facts
+- Laptop: Lenovo IdeaPad, Fedora 44, battery `BAT1`.
+- Two sysfs APIs: `conservation_mode` (binary 0/1) and `charge_types`
+  (`Fast` / `Standard` / `Long_Life`).
+- **Source of truth = `conservation_mode`** (caps at ~60%, best for longevity).
+- `charge_types` is NOT stable on this machine (the kernel falls back to
+  `Standard`) and writing to it **resets `conservation_mode` to 0** — do not use it.
 
-## File
-| File | Fungsi |
-|------|--------|
-| `lenovoctl` | CLI util: `status`, `doctor`, `battery long-life/standard/fast`, `fn on/off`, `usb on/off`. Membaca & menulis `conservation_mode`. |
-| `lenovo-battery-apply.sh` | Hanya set `conservation_mode=1`. Dipanggil saat boot. |
-| `lenovo-battery.service` | systemd unit (oneshot, `WantedBy=multi-user.target`) → jalan `lenovo-battery-apply.sh` tiap boot supaya profil persisten. |
+## Files
+| File | Purpose |
+|------|---------|
+| `lenovoctl` | CLI utility: `status`, `doctor`, `battery long-life/standard/fast`, `fn on/off`, `usb on/off`. Reads & writes `conservation_mode`. |
+| `lenovo-battery-apply.sh` | Only sets `conservation_mode=1`. Runs at boot. |
+| `lenovo-battery.service` | systemd unit (oneshot, `WantedBy=multi-user.target`) → runs `lenovo-battery-apply.sh` at every boot so the profile persists. |
 
 ## Install (root)
 ```bash
@@ -27,12 +28,12 @@ systemctl daemon-reload
 systemctl enable --now lenovo-battery.service
 ```
 
-## Pakai (harian)
+## Daily usage
 ```bash
 lenovoctl status                 # Battery -> "Long Life (conservation ~60%)"
-lenovoctl battery long-life      # batas ~60% (default, colok terus)
-lenovoctl battery standard       # isi penuh 100% (saat travel)
+lenovoctl battery long-life      # cap at ~60% (default, when always plugged in)
+lenovoctl battery standard       # charge to 100% (when travelling)
 ```
 
-Catatan: `lenovoctl` pakai `sudo tee` di dalamnya, jadi butuh sudo saat dijalankan
-manual. Saat boot, `lenovo-battery.service` jalan sebagai root (tanpa password).
+Note: `lenovoctl` uses `sudo tee` internally, so it needs sudo when run manually.
+At boot, `lenovo-battery.service` runs as root (without a password).

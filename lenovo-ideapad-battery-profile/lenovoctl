@@ -3,12 +3,12 @@
 # lenovoctl
 # Lenovo Linux Control Utility
 #
-# NOTE (2026-08-14): Sumber kebenaran baterai = conservation_mode
-# (batas ~60%, paling awet — intent Dr. Dwi). charge_types DIBIARKAN
-# tetap di Long_Life oleh kernel; kita TIDAK pernah menulis charge_types
-# karena menulisnya me-reset conservation_mode ke 0 (bug 2026-08-13).
-# Persistensi conservation_mode ditangani oleh lenovo-battery.service
-# (lenovo-battery-apply.sh) saat boot.
+# NOTE (2026-08-14): Source of truth for the battery = conservation_mode
+# (caps at ~60%, best for longevity — Dr. Dwi's intent). charge_types is left
+# at Long_Life by the kernel; we NEVER write charge_types because writing it
+# resets conservation_mode to 0 (bug 2026-08-13).
+# conservation_mode persistence is handled by lenovo-battery.service
+# (lenovo-battery-apply.sh) at boot.
 
 set -u
 
@@ -57,9 +57,9 @@ bool_text() {
 
 battery_status() {
 
-    # Sumber kebenaran = conservation_mode (persist via boot service,
-    # batas ~60% paling awet — sesuai intent Dr. Dwi). Hanya pakai
-    # charge_types sebagai fallback bila conservation_mode tidak ada.
+    # Source of truth = conservation_mode (persisted via the boot service,
+    # caps at ~60%, best for longevity — per Dr. Dwi's intent). Only fall back
+    # to charge_types if conservation_mode is unavailable.
     if [[ -f "$CONSERVATION" ]]; then
 
         case "$(cat "$CONSERVATION")" in
@@ -107,8 +107,8 @@ battery_set() {
 
     local mode="$1"
 
-    # HANYA tulis conservation_mode. JANGAN sentuh charge_types
-    # (menulisnya me-reset conservation_mode ke 0 -> baterai charge penuh).
+    # ONLY write conservation_mode. Do NOT touch charge_types
+    # (writing it resets conservation_mode to 0 -> battery charges fully).
     if [[ -f "$CONSERVATION" ]]; then
 
         case "$mode" in
@@ -123,7 +123,7 @@ battery_set() {
         return
     fi
 
-    # Fallback jikalau conservation_mode tidak tersedia di mesin lain
+    # Fallback for machines where conservation_mode is unavailable
     if [[ -n "$CHARGE_TYPES" && -f "$CHARGE_TYPES" ]]; then
         echo "$mode" | sudo tee "$CHARGE_TYPES" >/dev/null
         return
@@ -150,7 +150,7 @@ status() {
         printf "%-16s %s\n" "USB Charging" "$(bool_text "$(cat "$USB")")"
 
     [[ -f "$FAN" ]] && \
-        printf "%-16s %s\n" "Fan Mode" "$(cat "$FAN")"
+        printf "%-16s %s\n" "Fan Mode" "$(bool_text "$(cat "$FAN")")"
 
     if [[ -f "$CONSERVATION" ]]; then
         printf "%-16s %s\n" "Battery API" "conservation_mode"
