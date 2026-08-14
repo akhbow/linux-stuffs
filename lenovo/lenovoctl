@@ -1,0 +1,299 @@
+#!/usr/bin/env bash
+#
+# lenovoctl
+# Lenovo Linux Control Utility
+#
+# NOTE (2026-08-14): Sumber kebenaran baterai = conservation_mode
+# (batas ~60%, paling awet — intent Dr. Dwi). charge_types DIBIARKAN
+# tetap di Long_Life oleh kernel; kita TIDAK pernah menulis charge_types
+# karena menulisnya me-reset conservation_mode ke 0 (bug 2026-08-13).
+# Persistensi conservation_mode ditangani oleh lenovo-battery.service
+# (lenovo-battery-apply.sh) saat boot.
+
+set -u
+
+IDEAPAD="/sys/bus/platform/drivers/ideapad_acpi"
+
+DEVICE=$(find -L "$IDEAPAD" -maxdepth 1 -name "VPC*" -print -quit 2>/dev/null)
+
+if [[ -z "$DEVICE" || ! -e "$DEVICE" ]]; then
+    echo "lenovoctl: ideapad_acpi device not found."
+    exit 1
+fi
+
+CHARGE_TYPES=$(find /sys -name charge_types -print -quit 2>/dev/null || true)
+
+CONSERVATION="$DEVICE/conservation_mode"
+FNLOCK="$DEVICE/fn_lock"
+USB="$DEVICE/usb_charging"
+FAN="$DEVICE/fan_mode"
+
+############################################
+
+green() {
+    printf "\033[32m%s\033[0m\n" "$*"
+}
+
+yellow() {
+    printf "\033[33m%s\033[0m\n" "$*"
+}
+
+red() {
+    printf "\033[31m%s\033[0m\n" "$*"
+}
+
+############################################
+
+bool_text() {
+
+    case "$1" in
+        1) echo "Enabled" ;;
+        0) echo "Disabled" ;;
+        *) echo "$1" ;;
+    esac
+}
+
+############################################
+
+battery_status() {
+
+    # Sumber kebenaran = conservation_mode (persist via boot service,
+    # batas ~60% paling awet — sesuai intent Dr. Dwi). Hanya pakai
+    # charge_types sebagai fallback bila conservation_mode tidak ada.
+    if [[ -f "$CONSERVATION" ]]; then
+
+        case "$(cat "$CONSERVATION")" in
+            1) echo "Long Life (conservation ~60%)" ;;
+            0) echo "Standard (full charge)" ;;
+            *) echo "Unknown" ;;
+        esac
+
+        return
+    fi
+
+    if [[ -n "$CHARGE_TYPES" && -f "$CHARGE_TYPES" ]]; then
+
+        local current
+
+        current=$(
+            grep -o '\[[^]]*\]' "$CHARGE_TYPES" \
+            | tr -d '[]'
+        )
+
+        case "$current" in
+            Long_Life)
+                echo "Long Life"
+                ;;
+            Standard)
+                echo "Standard"
+                ;;
+            Fast)
+                echo "Fast"
+                ;;
+            *)
+                echo "$current"
+                ;;
+        esac
+
+        return
+    fi
+
+    echo "Unsupported"
+}
+
+############################################
+
+battery_set() {
+
+    local mode="$1"
+
+    # HANYA tulis conservation_mode. JANGAN sentuh charge_types
+    # (menulisnya me-reset conservation_mode ke 0 -> baterai charge penuh).
+    if [[ -f "$CONSERVATION" ]]; then
+
+        case "$mode" in
+            Long_Life)
+                echo 1 | sudo tee "$CONSERVATION" >/dev/null
+                ;;
+            Standard|Fast)
+                echo 0 | sudo tee "$CONSERVATION" >/dev/null
+                ;;
+        esac
+
+        return
+    fi
+
+    # Fallback jikalau conservation_mode tidak tersedia di mesin lain
+    if [[ -n "$CHARGE_TYPES" && -f "$CHARGE_TYPES" ]]; then
+        echo "$mode" | sudo tee "$CHARGE_TYPES" >/dev/null
+        return
+    fi
+
+    echo "Battery mode is not supported."
+    exit 1
+}
+
+############################################
+
+status() {
+
+    echo
+    echo "Lenovo Control"
+    echo "────────────────────────────"
+
+    printf "%-16s %s\n" "Battery" "$(battery_status)"
+
+    [[ -f "$FNLOCK" ]] && \
+        printf "%-16s %s\n" "Fn Lock" "$(bool_text "$(cat "$FNLOCK")")"
+
+    [[ -f "$USB" ]] && \
+        printf "%-16s %s\n" "USB Charging" "$(bool_text "$(cat "$USB")")"
+
+    [[ -f "$FAN" ]] && \
+        printf "%-16s %s\n" "Fan Mode" "$(cat "$FAN")"
+
+    if [[ -f "$CONSERVATION" ]]; then
+        printf "%-16s %s\n" "Battery API" "conservation_mode"
+    elif [[ -n "$CHARGE_TYPES" ]]; then
+        printf "%-16s %s\n" "Battery API" "charge_types"
+    fi
+
+    echo
+}
+
+############################################
+
+doctor() {
+
+    echo
+    echo "Lenovo Doctor"
+    echo "────────────────────────────"
+
+    [[ -e "$DEVICE" ]] \
+        && green "✓ ideapad_acpi device"
+
+    [[ -f "$CONSERVATION" ]] \
+        && green "✓ conservation_mode (primary)" \
+        || yellow "• conservation_mode missing"
+
+    [[ -n "$CHARGE_TYPES" ]] \
+        && green "✓ charge_types API (read-only fallback)" \
+        || yellow "• charge_types API"
+
+    [[ -f "$FNLOCK" ]] \
+        && green "✓ fn_lock"
+
+    [[ -f "$USB" ]] \
+        && green "✓ usb_charging"
+
+    [[ -f "$FAN" ]] \
+        && green "✓ fan_mode"
+
+    echo
+}
+
+############################################
+
+case "${1:-}" in
+
+status)
+    status
+    ;;
+
+doctor)
+    doctor
+    ;;
+
+battery)
+    case "${2:-}" in
+        fast)
+            battery_set Fast
+            ;;
+        standard)
+            battery_set Standard
+            ;;
+        long-life)
+            battery_set Long_Life
+            ;;
+        *)
+            echo
+            echo "Usage:"
+            echo "  lenovoctl battery fast"
+            echo "  lenovoctl battery standard"
+            echo "  lenovoctl battery long-life"
+            echo
+            ;;
+    esac
+    ;;
+
+fn)
+    [[ ! -f "$FNLOCK" ]] && {
+        echo "Fn Lock not supported."
+        exit 1
+    }
+
+    case "${2:-}" in
+        on)
+            echo 1 | sudo tee "$FNLOCK" >/dev/null
+            ;;
+        off)
+            echo 0 | sudo tee "$FNLOCK" >/dev/null
+            ;;
+        *)
+            echo "Usage: lenovoctl fn {on|off}"
+            ;;
+    esac
+    ;;
+
+usb)
+    [[ ! -f "$USB" ]] && {
+        echo "USB charging not supported."
+        exit 1
+    }
+
+    case "${2:-}" in
+        on)
+            echo 1 | sudo tee "$USB" >/dev/null
+            ;;
+        off)
+            echo 0 | sudo tee "$USB" >/dev/null
+            ;;
+        *)
+            echo "Usage: lenovoctl usb {on|off}"
+            ;;
+    esac
+    ;;
+
+help|-h|--help|"")
+cat <<EOF
+
+lenovoctl
+
+Usage
+
+  lenovoctl status
+  lenovoctl doctor
+
+Battery
+
+  lenovoctl battery fast
+  lenovoctl battery standard
+  lenovoctl battery long-life
+
+Fn Lock
+
+  lenovoctl fn on
+  lenovoctl fn off
+
+USB Charging
+
+  lenovoctl usb on
+  lenovoctl usb off
+EOF
+    ;;
+
+*)
+    red "Unknown command."
+    exit 1
+    ;;
+esac

@@ -1,0 +1,5 @@
+# Local working copies with real values — never commit
+*.local
+*.bak
+.env
+.env.*

@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply Lenovo battery profile (Long Life) at boot
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/lenovo-battery-apply.sh
+ExecStartPost=/bin/sleep 1
+
+[Install]
+WantedBy=multi-user.target
